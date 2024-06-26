@@ -1,0 +1,11 @@
+[package]
+name = "bt_wrapper"
+version = "0.1.0"
+authors = ["Cappe <caspernordstrom00@gmail.com"]
+edition = "2021"
+
+[dependencies]
+dbus = { version = "0.9.2", features = ["async"] }
+dbus-tokio = "0.7.6"
+thiserror = "1.0.61"
+tokio = { version = "1.38.0", features = ["full"] }
