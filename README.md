@@ -8,4 +8,4 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-my_bluetooth_library = "0.1.0"
+bt_wrapper = "0.1.0"
