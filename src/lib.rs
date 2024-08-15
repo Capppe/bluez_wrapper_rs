@@ -1,21 +1,8 @@
 pub mod bluetooth;
+pub mod bt_listener;
+pub mod bt_status;
 pub mod connection;
 pub mod device;
 pub mod discovery;
 pub mod errors;
 pub mod utils;
-
-// pub fn add(left: usize, right: usize) -> usize {
-//     left + right
-// }
-//
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn it_works() {
-//         let result = add(2, 2);
-//         assert_eq!(result, 4);
-//     }
-// }
