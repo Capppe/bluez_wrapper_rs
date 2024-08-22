@@ -8,4 +8,4 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-bt_wrapper = "0.1.0"
+bt_wrapper = { git = "https://github.com/capppe/bluez_wrapper_rs" }
