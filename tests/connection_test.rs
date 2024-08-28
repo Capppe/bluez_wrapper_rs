@@ -12,7 +12,7 @@ mod tests {
     }
 
     async fn run_test() {
-        let bt = Bluetooth::new()
+        let bt = Bluetooth::new(None)
             .await
             .expect("Failed to initialize Bluetooth");
 

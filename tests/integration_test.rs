@@ -2,14 +2,14 @@ extern crate bt_wrapper;
 
 #[cfg(test)]
 mod tests {
-    use std::{thread::sleep, time::Duration};
+    use std::time::Duration;
 
     use bt_wrapper::bluetooth::Bluetooth;
     use tokio::sync::oneshot;
 
     #[tokio::test]
     async fn test_start_discovery() {
-        let bt = Bluetooth::new()
+        let bt = Bluetooth::new(None)
             .await
             .expect("Failed to initialize Bluetooth");
 
@@ -23,7 +23,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_stop_discovery() {
-        let bt = Bluetooth::new()
+        let bt = Bluetooth::new(None)
             .await
             .expect("Failed to initialize Bluetooth");
 
@@ -34,7 +34,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_stop_discovery_while_running() {
-        let bt = Bluetooth::new()
+        let bt = Bluetooth::new(None)
             .await
             .expect("Failed to initialize Bluetooth");
 

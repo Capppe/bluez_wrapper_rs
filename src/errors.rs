@@ -19,6 +19,8 @@ pub enum BluetoothError {
 
     #[error("Failed to connect to device: {0}")]
     ConnectionFailed(String),
+    #[error("Failed to disconnect from device: {0}")]
+    DisconnectFailed(String),
 
     #[error("Unknown property: {0}")]
     UnknwonProperty(String),

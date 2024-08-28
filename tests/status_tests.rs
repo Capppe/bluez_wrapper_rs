@@ -6,7 +6,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_status() {
-        let bt = Bluetooth::new()
+        let bt = Bluetooth::new(None)
             .await
             .expect("Failed to initialize Bluetooth");
 

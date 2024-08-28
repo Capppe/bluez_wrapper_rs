@@ -9,7 +9,6 @@ use crate::errors::BluetoothError;
 use crate::utils::get_device_properties;
 use crate::utils::get_path_from_address;
 use dbus::arg::PropMap;
-use dbus::nonblock::MethodReply;
 use dbus::nonblock::Proxy;
 use dbus::nonblock::SyncConnection;
 use dbus_tokio::connection;
@@ -23,22 +22,22 @@ pub struct Bluetooth {
     pub current_device: Option<Device>,
 }
 
-//TODO add traits
+//*TODO add traits
 
 // trait Metods {
 //     async fn test() -> Result<(), Box<dyn Error>>;
 // }
 
 impl Bluetooth {
-    pub async fn new() -> Result<Self, BluetoothError> {
+    pub async fn new(adapter_path: Option<String>) -> Result<Self, BluetoothError> {
         let (resource, connection) = connection::new_system_sync()?;
 
-        let _handle = tokio::spawn(async {
+        tokio::spawn(async {
             let err = resource.await;
             panic!("Lost connection to DBus: {}", err);
         });
 
-        let adapter_path = String::from("/org/bluez/hci0"); //Default path
+        let adapter_path = adapter_path.unwrap_or_else(|| "/org/bluez/hci0".to_string());
         Ok(Self {
             connection,
             adapter_path,
@@ -46,11 +45,25 @@ impl Bluetooth {
         })
     }
 
-    pub async fn get_status(&self) -> Result<Status, BluetoothError> {
-        let adapter = self.adapter_path.clone();
-        let conn = self.connection.clone();
+    fn create_proxy(
+        &self,
+        path: Option<String>,
+        timeout_duration: Duration,
+    ) -> Proxy<&SyncConnection> {
+        Proxy::new(
+            "org.bluez",
+            path.unwrap_or_else(|| self.adapter_path.to_string()),
+            timeout_duration,
+            self.connection.as_ref(),
+        )
+    }
 
-        let proxy = Proxy::new("org.bluez", adapter, Duration::from_millis(5000), conn);
+    pub async fn get_status(&self) -> Result<Status, BluetoothError> {
+        // let adapter = &self.adapter_path;
+        // let conn = self.connection.to_owned();
+
+        // let proxy = Proxy::new("org.bluez", adapter, Duration::from_millis(5000), conn);
+        let proxy = self.create_proxy(None, Duration::from_secs(5));
         let (mut result,): (PropMap,) = proxy
             .method_call(
                 "org.freedesktop.DBus.Properties",
@@ -58,24 +71,18 @@ impl Bluetooth {
                 ("org.bluez.Adapter1",),
             )
             .await
-            .unwrap();
+            .map_err(|_| BluetoothError::Unknown("Failed to call method GetAll".to_owned()))?;
 
         let devices = self.get_known_devices().await;
         let mut connected_devices = 0;
 
         if devices.is_ok() {
-            for device in devices.unwrap() {
-                if let Some(c) = device.connected {
-                    if c == true {
-                        connected_devices += 1;
-                    }
-                }
-            }
+            connected_devices = devices.unwrap().iter().map(|d| d.connected).len();
         }
 
         result.insert(
             "ConnectedDevices".to_string(),
-            dbus::arg::Variant(Box::new(connected_devices)),
+            dbus::arg::Variant(Box::new(connected_devices as i32)),
         );
 
         Ok(Status::new(result))
@@ -88,7 +95,7 @@ impl Bluetooth {
         let adapter = self.adapter_path.clone();
         let conn = self.connection.clone();
 
-        let discovery_future: tokio::task::JoinHandle<Result<(), _>> = tokio::spawn(async move {
+        let discovery_future = tokio::spawn(async move {
             let proxy = Proxy::new("org.bluez", adapter, Duration::from_millis(5000), conn);
 
             proxy
@@ -97,27 +104,36 @@ impl Bluetooth {
                 .map_err(|_| BluetoothError::StartDiscoveryFailed)?;
 
             tokio::time::sleep(discovery_duration).await;
-
             Ok::<(), BluetoothError>(())
         });
 
-        match timeout(
+        let _ = timeout(
             discovery_duration + Duration::from_secs(1),
             discovery_future,
         )
         .await
-        {
-            Ok(Ok(_)) => Ok(()),
-            Ok(Err(e)) => Err(BluetoothError::Unknown(e.to_string())),
-            Err(_) => Err(BluetoothError::Timeout),
-        }
+        .map_err(|_| BluetoothError::Timeout)?;
+
+        Ok(())
+
+        // match timeout(
+        //     discovery_duration + Duration::from_secs(1),
+        //     discovery_future,
+        // )
+        // .await
+        // {
+        //     Ok(Ok(_)) => Ok(()),
+        //     Ok(Err(e)) => Err(BluetoothError::Unknown(e.to_string())),
+        //     Err(_) => Err(BluetoothError::Timeout),
+        // }
     }
 
     pub async fn stop_discovery(&self) -> Result<(), BluetoothError> {
-        let conn = self.connection.clone();
-        let adapter = self.adapter_path.clone();
-
-        let proxy = Proxy::new("org.bluez", adapter, Duration::from_millis(5000), conn);
+        // let conn = self.connection.clone();
+        // let adapter = &self.adapter_path;
+        //
+        // let proxy = Proxy::new("org.bluez", adapter, Duration::from_millis(5000), conn);
+        let proxy = self.create_proxy(None, Duration::from_secs(5));
 
         proxy
             .method_call("org.bluez.Adapter1", "StopDiscovery", ())
@@ -132,20 +148,16 @@ impl Bluetooth {
         address: String,
         timeout_duration: Duration,
     ) -> Result<(), BluetoothError> {
-        let conn = self.connection.clone();
+        // let conn = self.connection.clone();
         let adapter = get_path_from_address(&address, &self.adapter_path);
 
-        let proxy = Proxy::new("org.bluez", adapter, timeout_duration, conn);
+        // let proxy = Proxy::new("org.bluez", adapter, timeout_duration, conn);
+        let proxy = self.create_proxy(Some(adapter), timeout_duration);
 
-        let result = proxy
+        proxy
             .method_call("org.bluez.Device1", "Connect", ())
             .await
-            .map_err(|e| BluetoothError::ConnectionFailed(e.to_string()));
-
-        match result {
-            Ok(()) => Ok(()),
-            Err(e) => Err(BluetoothError::Unknown(e.to_string())),
-        }
+            .map_err(|e| BluetoothError::ConnectionFailed(e.to_string()))
     }
 
     pub async fn disconnect(
@@ -153,24 +165,22 @@ impl Bluetooth {
         address: String,
         timeout_duration: Duration,
     ) -> Result<(), BluetoothError> {
-        let conn = self.connection.clone();
+        // let conn = self.connection.clone();
         let adapter = get_path_from_address(&address, &self.adapter_path);
 
-        let proxy = Proxy::new("org.bluez", adapter, timeout_duration, conn);
+        // let proxy = Proxy::new("org.bluez", adapter, timeout_duration, conn);
+        let proxy = self.create_proxy(Some(adapter), timeout_duration);
 
-        let result = proxy
+        proxy
             .method_call("org.bluez.Device1", "Disconnect", ())
-            .await;
-
-        match result {
-            Ok(()) => Ok(()),
-            Err(e) => Err(BluetoothError::Unknown(e.to_string())),
-        }
+            .await
+            .map_err(|e| BluetoothError::DisconnectFailed(e.to_string()))
     }
 
     pub async fn get_known_devices(&self) -> Result<Vec<Device>, Box<dyn Error>> {
-        let conn = self.connection.clone();
-        let proxy = Proxy::new("org.bluez", "/", Duration::from_secs(5), conn);
+        // let conn = self.connection.clone();
+        // let proxy = Proxy::new("org.bluez", "/", Duration::from_secs(5), conn);
+        let proxy = self.create_proxy(Some("/".to_string()), Duration::from_secs(5));
         let mut devices = Vec::new();
 
         let result: (HashMap<dbus::Path, HashMap<String, dbus::arg::PropMap>>,) = proxy

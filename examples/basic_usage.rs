@@ -7,7 +7,7 @@ use bt_wrapper::bluetooth::Bluetooth;
 #[tokio::main]
 async fn main() {
     // Acquire connection to Bluez DBus API
-    let bt = Bluetooth::new()
+    let bt = Bluetooth::new(None)
         .await
         .expect("Failed to initialize Bluetooth");
 

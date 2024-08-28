@@ -8,7 +8,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_listener() {
-        let bt = Bluetooth::new()
+        let bt = Bluetooth::new(None)
             .await
             .expect("Failed to initialize Bluetooth");
 
@@ -34,7 +34,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_removed_listener() {
-        let bt = Bluetooth::new()
+        let bt = Bluetooth::new(None)
             .await
             .expect("Failed to initialize Bluetooth");
 
@@ -60,7 +60,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_connected_listener() {
-        let bt = Bluetooth::new()
+        let bt = Bluetooth::new(None)
             .await
             .expect("Failed to initialize Bluetooth");
 
