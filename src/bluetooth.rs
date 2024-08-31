@@ -9,6 +9,7 @@ use crate::errors::BluetoothError;
 use crate::utils::get_device_properties;
 use crate::utils::get_path_from_address;
 use dbus::arg::PropMap;
+use dbus::nonblock::stdintf::org_freedesktop_dbus::Properties;
 use dbus::nonblock::Proxy;
 use dbus::nonblock::SyncConnection;
 use dbus_tokio::connection;
@@ -22,11 +23,10 @@ pub struct Bluetooth {
     pub current_device: Option<Device>,
 }
 
-//*TODO add traits
-
-// trait Metods {
-//     async fn test() -> Result<(), Box<dyn Error>>;
-// }
+pub trait Power {
+    fn power_on(&self) -> impl std::future::Future<Output = Result<(), String>>;
+    fn power_off(&self) -> impl std::future::Future<Output = Result<(), String>>;
+}
 
 impl Bluetooth {
     pub async fn new(adapter_path: Option<String>) -> Result<Self, BluetoothError> {
@@ -205,5 +205,25 @@ impl Bluetooth {
         }
 
         Ok(devices)
+    }
+}
+
+impl Power for Bluetooth {
+    async fn power_on(&self) -> Result<(), String> {
+        let proxy = self.create_proxy(Some("/org/bluez/hci0".to_string()), Duration::from_secs(5));
+
+        proxy
+            .set("org.bluez.Adapter1", "Powered", true)
+            .await
+            .map_err(|e| format!("Failed to power on bluetooth: {}", e))
+    }
+
+    async fn power_off(&self) -> Result<(), String> {
+        let proxy = self.create_proxy(Some("/org/bluez/hci0".to_string()), Duration::from_secs(5));
+
+        proxy
+            .set("org.bluez.Adapter1", "Powered", false)
+            .await
+            .map_err(|e| format!("Failed to power on bluetooth: {}", e))
     }
 }

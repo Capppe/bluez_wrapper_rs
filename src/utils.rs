@@ -1,11 +1,10 @@
-use crate::{bluetooth::Bluetooth, device::Device, errors::BluetoothError};
+use crate::{device::Device, errors::BluetoothError};
 
 use dbus::{
     arg::{RefArg, Variant},
-    nonblock::Proxy,
     Message, Path,
 };
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::collections::HashMap;
 
 pub fn get_device_properties(properties: &HashMap<String, Variant<Box<dyn RefArg>>>) -> Device {
     let name = properties
