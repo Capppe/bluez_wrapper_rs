@@ -59,10 +59,6 @@ impl Bluetooth {
     }
 
     pub async fn get_status(&self) -> Result<Status, BluetoothError> {
-        // let adapter = &self.adapter_path;
-        // let conn = self.connection.to_owned();
-
-        // let proxy = Proxy::new("org.bluez", adapter, Duration::from_millis(5000), conn);
         let proxy = self.create_proxy(None, Duration::from_secs(5));
         let (mut result,): (PropMap,) = proxy
             .method_call(
@@ -115,24 +111,9 @@ impl Bluetooth {
         .map_err(|_| BluetoothError::Timeout)?;
 
         Ok(())
-
-        // match timeout(
-        //     discovery_duration + Duration::from_secs(1),
-        //     discovery_future,
-        // )
-        // .await
-        // {
-        //     Ok(Ok(_)) => Ok(()),
-        //     Ok(Err(e)) => Err(BluetoothError::Unknown(e.to_string())),
-        //     Err(_) => Err(BluetoothError::Timeout),
-        // }
     }
 
     pub async fn stop_discovery(&self) -> Result<(), BluetoothError> {
-        // let conn = self.connection.clone();
-        // let adapter = &self.adapter_path;
-        //
-        // let proxy = Proxy::new("org.bluez", adapter, Duration::from_millis(5000), conn);
         let proxy = self.create_proxy(None, Duration::from_secs(5));
 
         proxy
@@ -148,10 +129,8 @@ impl Bluetooth {
         address: String,
         timeout_duration: Duration,
     ) -> Result<(), BluetoothError> {
-        // let conn = self.connection.clone();
         let adapter = get_path_from_address(&address, &self.adapter_path);
 
-        // let proxy = Proxy::new("org.bluez", adapter, timeout_duration, conn);
         let proxy = self.create_proxy(Some(adapter), timeout_duration);
 
         proxy
@@ -165,10 +144,8 @@ impl Bluetooth {
         address: String,
         timeout_duration: Duration,
     ) -> Result<(), BluetoothError> {
-        // let conn = self.connection.clone();
         let adapter = get_path_from_address(&address, &self.adapter_path);
 
-        // let proxy = Proxy::new("org.bluez", adapter, timeout_duration, conn);
         let proxy = self.create_proxy(Some(adapter), timeout_duration);
 
         proxy
@@ -178,8 +155,6 @@ impl Bluetooth {
     }
 
     pub async fn get_known_devices(&self) -> Result<Vec<Device>, Box<dyn Error>> {
-        // let conn = self.connection.clone();
-        // let proxy = Proxy::new("org.bluez", "/", Duration::from_secs(5), conn);
         let proxy = self.create_proxy(Some("/".to_string()), Duration::from_secs(5));
         let mut devices = Vec::new();
 
