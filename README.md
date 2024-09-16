@@ -1,6 +1,8 @@
 # Bluez bluetooth wrapper
 
-A Rust library for interacting with Bluetooth devices on Linux.
+A bluez dbus wrapper written in Rust
+
+Mainly written to be used in my other project, [Car Head Unit](https://github.com/capppe/car_head_unit_rs)
 
 ## Usage
 

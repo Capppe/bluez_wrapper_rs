@@ -6,10 +6,11 @@ edition = "2021"
 
 [dependencies]
 async-channel = "2.3.1"
-dbus = "0.9.7"
+dbus = { version="0.9.7", features = ["futures"] }
 dbus-tokio = "0.7.6"
 regex = "1.10.5"
 serde = { version = "1.0.203", features = ["derive"] }
 serde_json = "1.0.118"
 thiserror = "1.0.61"
 tokio = { version = "1.38.0", features = ["full"] }
+futures-util = "0.3.30"

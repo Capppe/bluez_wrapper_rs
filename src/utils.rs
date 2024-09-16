@@ -1,36 +1,8 @@
-use crate::{device::Device, errors::BluetoothError};
-
 use dbus::{
     arg::{RefArg, Variant},
     Message, Path,
 };
 use std::collections::HashMap;
-
-pub fn get_device_properties(properties: &HashMap<String, Variant<Box<dyn RefArg>>>) -> Device {
-    let name = properties
-        .get("Name")
-        .and_then(|v| v.0.as_str().map(|s| s.to_string()));
-    let address = properties
-        .get("Address")
-        .and_then(|v| v.0.as_str().map(|s| s.to_string()));
-    let paired = properties
-        .get("Paired")
-        .and_then(|v| v.as_u64().map(|c| c == 1));
-    let connected = properties
-        .get("Connected")
-        .and_then(|v| v.as_u64().map(|c| c == 1));
-    let icon = properties
-        .get("Icon")
-        .and_then(|v| v.0.as_str().map(|s| s.to_string()));
-
-    Device {
-        name,
-        address,
-        paired,
-        connected,
-        icon,
-    }
-}
 
 pub fn get_string_from_variant(variant: Option<&Variant<Box<dyn RefArg>>>) -> String {
     if let Some(s) = variant {
@@ -80,19 +52,19 @@ pub fn get_path_from_address(address: &str, adapter_path: &str) -> String {
     return format!("{}/dev_{}", adapter_path, address.replace(":", "_"));
 }
 
-pub fn get_address_from_path(path: Path) -> Result<String, BluetoothError> {
+pub fn get_address_from_path(path: Path) -> Result<String, String> {
     if let Some(s) = path.split("dev_").last() {
         Ok(s.replace("_", ":"))
     } else {
-        Err(BluetoothError::InvalidDevice)
+        Err(format!("Invalid device path: {}", path))
     }
 }
 
 pub fn read_dbus_propmap(
     message: Message,
-) -> Result<(dbus::Path<'static>, HashMap<String, dbus::arg::PropMap>), BluetoothError> {
+) -> Result<(dbus::Path<'static>, HashMap<String, dbus::arg::PropMap>), String> {
     return match message.read2::<dbus::Path<'static>, HashMap<String, dbus::arg::PropMap>>() {
         Ok(res) => Ok(res),
-        Err(e) => Err(BluetoothError::Unknown(e.to_string())),
+        Err(e) => Err(format!("Failed to parse propmap, cause: {}", e)),
     };
 }
