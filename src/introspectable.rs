@@ -1,6 +1,6 @@
 use dbus::blocking::SyncConnection;
 
-use crate::{DBusItem, DBusProxy, Methods};
+use crate::{utils::validate_path, DBusItem, DBusProxy, Methods};
 
 pub struct Introspectable {
     interface: String,
@@ -27,11 +27,15 @@ impl<'a> DBusProxy<'a> for Introspectable {}
 impl Methods for Introspectable {}
 
 impl Introspectable {
-    pub fn new(path: &str) -> Result<Self, dbus::Error> {
+    pub fn new(path: &str) -> Result<Self, String> {
+        if !validate_path(path) {
+            return Err(format!("Invalid path: {}", path));
+        }
         Ok(Self {
             interface: "org.freedesktop.DBus.Properties".to_string(),
             object_path: path.to_string(),
-            connection: SyncConnection::new_system()?,
+            connection: SyncConnection::new_system()
+                .map_err(|e| format!("Failed to acquire dbus-connection: {}", e))?,
         })
     }
 

@@ -7,7 +7,9 @@ use dbus::{
 };
 use tokio::sync::mpsc::Sender;
 
-use crate::{dbus_utils::parse_propmap, DBusItem, DBusProxy, Methods, Signals};
+use crate::{
+    dbus_utils::parse_propmap, utils::validate_path, DBusItem, DBusProxy, Methods, Signals,
+};
 
 pub struct Properties {
     interface: String,
@@ -36,11 +38,16 @@ impl Signals for Properties {}
 impl Methods for Properties {}
 
 impl Properties {
-    pub fn new(path: &str) -> Result<Self, dbus::Error> {
+    pub fn new(path: &str) -> Result<Self, String> {
+        if !validate_path(path) {
+            return Err(format!("Invalid path: {}", path));
+        }
+
         Ok(Self {
             interface: "org.freedesktop.DBus.Properties".to_string(),
             object_path: path.to_string(),
-            connection: SyncConnection::new_system()?,
+            connection: SyncConnection::new_system()
+                .map_err(|e| format!("Failed to acquire dbus-connection: {}", e))?,
         })
     }
 
