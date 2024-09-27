@@ -56,8 +56,12 @@ impl Adapter1 {
     }
 
     pub fn start_discovery(&self) -> Result<(), String> {
-        let _ = self.call_method_no_return("StartDiscovery", ());
-        loop {}
+        let clone = self.clone();
+        std::thread::spawn(move || {
+            let _ = clone.call_method_no_return("StartDiscovery", ());
+            loop {}
+        });
+        Ok(())
     }
 
     pub fn stop_discovery(&self) -> Result<(), String> {

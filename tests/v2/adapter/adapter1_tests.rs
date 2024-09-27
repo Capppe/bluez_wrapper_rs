@@ -2,13 +2,18 @@ extern crate bt_wrapper;
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::{collections::HashMap, time::Duration};
 
     use bt_wrapper::{adapter::adapter1::Adapter1, Properties};
     use dbus::{
         arg::{RefArg, Variant},
         Path,
     };
+
+    #[derive(Clone)]
+    struct ScanTest {
+        adapter: Adapter1,
+    }
 
     #[test]
     fn test_method_get_discovery_filters() {
@@ -45,12 +50,18 @@ mod tests {
         assert!(1 == 1)
     }
 
-    #[test]
-    fn test_method_start_discovery() {
-        let iface = Adapter1::new().unwrap();
+    #[tokio::test]
+    async fn test_method_start_discovery() {
+        // stopDiscovery needs to be called from the same 'session'
+        let test = ScanTest {
+            adapter: Adapter1::new().unwrap(),
+        };
 
-        let iface_c = iface.clone();
-        let _ = iface_c.start_discovery();
+        let _ = test.adapter.start_discovery().unwrap();
+
+        std::thread::sleep(Duration::from_secs(5));
+
+        let _ = test.adapter.stop_discovery().unwrap();
 
         assert!(1 == 1)
     }
