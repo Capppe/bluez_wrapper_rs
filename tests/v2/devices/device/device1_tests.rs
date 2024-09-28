@@ -8,7 +8,6 @@ mod tests {
         utils::{validate_address, validate_path},
         Properties,
     };
-    use dbus::arg::{Append, RefArg};
 
     #[test]
     fn test_method_cancel_pairing() {
